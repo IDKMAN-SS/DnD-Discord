@@ -25,8 +25,8 @@ class Reminder(Base):
     time = Column(String)
     sent = Column(Boolean, default=False)
 
-class Item(Base):
-    __tablename__ = "items"
+class Weapons(Base):
+    __tablename__ = "weapons"
 
     index = Column(String, primary_key=True, index=True)
     name = Column(String)
