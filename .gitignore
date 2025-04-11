@@ -59,10 +59,6 @@ coverage.xml
 .pytest_cache/
 
 # FastAPI-specific (optional)
-instance/
-*.db
-*.sqlite3
-
 # VS Code
 .vscode/
 
