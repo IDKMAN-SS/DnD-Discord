@@ -1,3 +1,3 @@
 import subprocess
 
-subprocess.run(["python", "./bot/dnd_test.py"])
+subprocess.run(["python", "./bot/main.py"])
