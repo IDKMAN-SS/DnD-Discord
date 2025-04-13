@@ -1,18 +1,18 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database.models import Character
 from database.database import get_db
 from roll import roll_dice
 import random
 
-app = FastAPI()
+router = APIRouter()
 
 #roll for attack value
 def roll_attack(character_level, ac):
     attack_roll = random.randint(1, 20) + character_level
     return attack_roll >= ac
 
-@app.post("/attack")
+@router.post("/attack")
 async def attack(attacker_name: str, target_name: str, damage_dice: str, db: Session = Depends(get_db)):
     attacker = db.query(Character).filter(Character.name == attacker_name).first()
     target = db.query(Character).filter(Character.name == target_name).first()
