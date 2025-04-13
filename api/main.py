@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Depends
 from api.apihandlers import roll, lookup
+from api.apihandlers.attack import router as attack_router
 import logging
 from database.database import get_db
+from database.models import Character
 from sqlalchemy.orm.session import Session
 
 logger = logging.getLogger('uvicorn.error')
@@ -32,3 +34,25 @@ def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
         return lookup.lookup(name, ltype, db)
     except ValueError as e:
         return str(e)
+
+#create character endpoint
+@app.post("/api/character")
+def create_character(character: Character, db: Session = Depends(get_db)):
+    return character_management.create_character(character, db)
+
+#get character endpoint
+@app.get("/api/character/{name}")
+def get_character(name: str, db: Session = Depends(get_db)):
+    return character_management.get_character(name, db)
+
+#update character endpoint
+@app.put("/api/character/{name}")
+def update_character(name: str, character: Character, db: Session = Depends(get_db)):
+    return character_management.update_character(name, character, db)
+
+@app.delete("/api/character/{name}")
+def delete_character(name: str, db: Session = Depends(get_db)):
+    return character_management.delete_character(name, db)
+
+#attack endpoint
+app.include_router(attack_router, prefix="/api")
