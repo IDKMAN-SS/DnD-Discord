@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from api.apihandlers import roll, lookup
+from api.apihandlers import roll, lookup, scheduler
 import logging
 from database.database import get_db
 from sqlalchemy.orm.session import Session
@@ -30,5 +30,17 @@ def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
         return {"name or type are missing"}
     try:
         return lookup.lookup(name, ltype, db)
+    except ValueError as e:
+        return str(e)
+@app.post("/reminder")
+def _(date: str, time: str, message: str, channel_id: str, db: Session = Depends(get_db)):
+    if date == "" or time == "":
+        return "invalid data please schedule your date as : yyyy-mm-dd and time as : hh:mm"
+    if message == "":
+        return "please make sure to fill in your message after your date and time"
+    if channel_id == "":
+        return "Error: could not find channel_id"
+    try:
+        return scheduler.schedule_reminder(date, time, message, channel_id, db)
     except ValueError as e:
         return str(e)
