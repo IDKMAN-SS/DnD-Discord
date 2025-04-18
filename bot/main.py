@@ -12,7 +12,7 @@ intents.message_content = True
 
 roll_url = "http://localhost:8000/roll"
 schedule_url = "http://localhost:8000/reminder"
-
+customweapon_url = "http://localhost:8000/customweapon"
 
 GUILD_ID = 1359588987391578342
 
@@ -47,25 +47,35 @@ async def roll(interaction: discord.Interaction, dice: str):
             else:
                 await interaction.followup.send("Error contacting the dice roller API.")
 
+# slash command for creating a custom weapon
+@client.tree.command(name="customweapon", description="Create a custom weapon.")
+@app_commands.describe(name="Weapon name", damage="weapon damage", range="weapon range")
+async def customweapon(interaction: discord.Interaction, name: str, damage: int, custom_range: int):
+    await interaction.response.defer()
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(customweapon_url, params={"name": name, "damage": damage, "range": custom_range}) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    await interaction.followup.send((f"success {data.name} created successfully."))
+                else:
+                    error_message = await resp.text()
+                    await interaction.followup.send(f"Failed to create weapon. Server said: {error_message}")
+    except Exception as e:
+        await interaction.followup.send(f"an error occurred: {e}")
+
+
 # slash command for scheduler
 @client.tree.command(name="reminder", description="set a reminder with a date and time")
-@app_commands.describe(
-    date="Date in YYYY-MM-DD",
-    time="Time in HH:MM (24hr)",
-    message="Reminder message"
-)
+@app_commands.describe(date="Date in YYYY-MM-DD", time="Time in HH:MM (24hr)", message="Reminder message")
 async def reminder(interaction: discord.Interaction, date: str, time: str, message: str):
     await interaction.response.defer()
 
     channel_id = str(interaction.channel_id)
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(schedule_url, json={
-            "date": date,
-            "time": time,
-            "message": message,
-            "channel_id": channel_id
-        }) as resp:
+        async with session.post(schedule_url, json={"date": date,"time": time,"message": message,"channel_id": channel_id}) as resp:
             if resp.status == 200:
                 result = await resp.json()
                 await interaction.followup.send(f"{result}")

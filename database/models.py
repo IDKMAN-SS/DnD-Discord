@@ -99,3 +99,11 @@ class Monster(Base):
     senses_tremorsense = Column(String)
     reactions = Column(String)
     forms = Column(String)
+
+class CustomWeapon(Base):
+    __tablename__ = "custom_weapons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    damage = Column(Integer)
+    range = Column(Integer)

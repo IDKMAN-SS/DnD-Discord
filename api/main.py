@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from api.apihandlers import roll, lookup, scheduler
+from api.apihandlers import roll, lookup, scheduler, custom_weapons
 import logging
 from database.database import get_db
 from sqlalchemy.orm.session import Session
@@ -32,6 +32,7 @@ def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
         return lookup.lookup(name, ltype, db)
     except ValueError as e:
         return str(e)
+
 @app.post("/reminder")
 def _(date: str, time: str, message: str, channel_id: str, db: Session = Depends(get_db)):
     if date == "" or time == "":
@@ -44,3 +45,7 @@ def _(date: str, time: str, message: str, channel_id: str, db: Session = Depends
         return scheduler.schedule_reminder(date, time, message, channel_id, db)
     except ValueError as e:
         return str(e)
+
+@app.post("/customweapon")
+def _(name: str, damage: int, range: int, db: Session = Depends(get_db)):
+    return custom_weapons.add_custom_weapon(name, damage, range, db)
