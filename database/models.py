@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, true
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, DateTime, Integer, String, Float, Boolean, ForeignKey, true
 from database.database import Base
 
 class Character(Base):
@@ -18,11 +17,9 @@ class Reminder(Base):
     __tablename__ = "reminders"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String)
     channel_id = Column(String)
     message = Column(String)
-    date = Column(String)
-    time = Column(String)
+    date_time = Column(DateTime)
     sent = Column(Boolean, default=False)
 
 class Weapons(Base):
