@@ -15,12 +15,12 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/roll")
-def _(q: str = ""):
+def _(dice: str = ""):
     logger.debug("rolling endpoint hit")
-    if q == "":
+    if dice == "":
         return{"could not process request"}
     try:
-        return roll.roll_dice(q)
+        return roll.roll_dice(dice)
     except ValueError as e:
         return str(e)
 

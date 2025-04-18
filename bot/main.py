@@ -42,8 +42,11 @@ class Client(commands.Bot):
         # Initialize the DiscordBot setup hook
         await super().setup_hook()
 
+
 		# Sync application commands
         self.loop.create_task(self.startup())
+
+        #setups the reminders loop
 
 
     async def on_ready(self):
@@ -94,8 +97,15 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, messa
 
     channel_id = str(interaction.channel_id)
 
+    params = {
+        "date": date,
+        "time": time,
+        "message": message,
+        "channel_id": channel_id
+    }
+
     async with aiohttp.ClientSession() as session:
-        async with session.post(schedule_url, json={"date": date,"time": time,"message": message,"channel_id": channel_id}) as resp:
+        async with session.post(schedule_url, params=params) as resp:
             if resp.status == 200:
                 result = await resp.json()
                 await interaction.followup.send(f"{result}")
