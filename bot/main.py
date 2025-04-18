@@ -1,6 +1,8 @@
-import discord
 import os
-import httpx
+import discord
+from discord.ext import commands
+from discord import app_commands
+import aiohttp
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,112 +10,188 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+roll_url = "http://localhost:8000/roll"
+schedule_url = "http://localhost:8000/reminder"
+customweapon_url = "http://localhost:8000/customweapon"
+lookup_url = "http://localhost:8000/search"
+character_url = "http://localhost:8000/character"
+attack_url = "http://localhost:8000/attack"
 
-API_URL = "http://localhost:8000/api"
+GUILD_ID = 1359588987391578342
 
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
+class Client(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=intents)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+    '''
+    async def setup_hook(self):
+        guild = discord.Object(id=GUILD_ID)
+        #await self.tree.sync(guild=guild)
+        await self.tree.sync()
+    '''
 
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
+    # Link for the fix to syncing the bot commands:
+    # https://github.com/PaulMarisOUMary/Discord-Bot/blob/main/bot.py
+    async def startup(self) -> None:
+        """Sync application commands"""
+        await self.wait_until_ready()
+		
+		# Sync application commands
+        synced = await self.tree.sync()
+		
+    async def setup_hook(self) -> None:
+        """Initialize the bot, database, prefixes & cogs."""
+        # Initialize the DiscordBot setup hook
+        await super().setup_hook()
 
-    #create character
-    if message.content.startswith("/character create"):
-        parts = message.content.split(" ", 3)
-        if len(parts) < 4:
-            await message.channel.send("Please provide the name and other information about your character.")
-            return
-        name = parts[2]
-        other_info = parts[3]
-        
-        #send request to create character
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_URL}/character", json={
-                "name": name,
-                "other_info": other_info
-            })
-        await message.channel.send(f"Character {name} created!")
+		# Sync application commands
+        self.loop.create_task(self.startup())
 
-    #view character
-    if message.content.startswith("/character view"):
-        parts = message.content.split(" ", 2)
-        if len(parts) < 3:
-            await message.channel.send("Please provide the character's name.")
-            return
-        name = parts[2]
-        
-        #send request to get character
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{API_URL}/character/{name}")
-        
-        if response.status_code == 200:
-            character = response.json()
-            await message.channel.send(f"Character details: {character}")
-        else:
-            await message.channel.send("Character not found.")
 
-    #update character
-    if message.content.startswith("/character update"):
-        parts = message.content.split(" ", 3)
-        if len(parts) < 4:
-            await message.channel.send("Please provide the name and other info to update.")
-            return
-        name = parts[2]
-        other_info = parts[3]
-        
-        #send request to update character
-        async with httpx.AsyncClient() as client:
-            response = await client.put(f"{API_URL}/character/{name}", json={
-                "other_info": other_info
-            })
-        
-        await message.channel.send(f"Character {name} updated!")
+    async def on_ready(self):
+        print(f'We have logged in as {self.user}')
 
-    #delete character
-    if message.content.startswith("/character delete"):
-        parts = message.content.split(" ", 2)
-        if len(parts) < 3:
-            await message.channel.send("Please provide the character's name to delete.")
-            return
-        name = parts[2]
-        
-        #send request to delete character
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(f"{API_URL}/character/{name}")
-        
-        await message.channel.send(f"Character {name} deleted!")
+intents = discord.Intents.default()
+intents.message_content = True
 
-    #attack command
-    if message.content.startswith("/attack"):
-        parts = message.content.split(" ", 3)
-        if len(parts) < 4:
-            await message.channel.send("Please provide a target name and damage dice (e.g., /attack {target} 1d6).")
-            return
-        target_name = parts[2]
-        damage_dice = parts[3]
+client = Client()
 
-        #perform attack
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_URL}/attack", json={
-                "attacker_name": message.author.name,
-                "target_name": target_name,
-                "damage_dice": damage_dice
-            })
-        
-        attack_result = response.json()
-        await message.channel.send(attack_result["message"])
+# slash command for rolling dice
+@client.tree.command(name="roll", description="roll a die")
+async def roll(interaction: discord.Interaction, dice: str):
+    await interaction.response.defer()  # Acknowledge the interaction
 
-        #if target dies, dm both players
-        if "Dead" in attack_result["message"]:
-            target_user = discord.utils.get(message.guild.members, name=target_name)
-            if target_user:
-                await target_user.send(f"Your character {target_name} has been killed in combat!")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(roll_url, params={"dice": dice}) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(f"You rolled `{dice}` and got: {result}")
+            else:
+                await interaction.followup.send("Error contacting the dice roller API.")
+
+# slash command for creating a custom weapon
+@client.tree.command(name="customweapon", description="Create a custom weapon.")
+@app_commands.describe(name="Weapon name", damage="weapon damage", range="weapon range")
+async def customweapon(interaction: discord.Interaction, name: str, damage: int, range: int):
+    await interaction.response.defer()
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(customweapon_url, params={"name": name, "damage": damage, "range": range}) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    await interaction.followup.send((f"success {data.name} created successfully."))
+                else:
+                    error_message = await resp.text()
+                    await interaction.followup.send(f"Failed to create weapon. Server said: {error_message}")
+    except Exception as e:
+        await interaction.followup.send(f"an error occurred: {e}")
+
+
+# slash command for scheduler
+@client.tree.command(name="reminder", description="set a reminder with a date and time")
+@app_commands.describe(date="Date in YYYY-MM-DD", time="Time in HH:MM (24hr)", message="Reminder message")
+async def reminder(interaction: discord.Interaction, date: str, time: str, message: str):
+    await interaction.response.defer()
+
+    channel_id = str(interaction.channel_id)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(schedule_url, json={"date": date,"time": time,"message": message,"channel_id": channel_id}) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(f"{result}")
+            else:
+                await interaction.followup.send("Failed to schedule")
+
+# slash command for lookup
+@client.tree.command(name="lookup", description="search a specific type of entity")
+@app_commands.describe(name="the name of the entity", ltype="enter monster or weapons")
+async def lookup(interaction: discord.Interaction, name: str, ltype: str):
+    await interaction.response.defer()
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(lookup_url, params={"name": name, "ltype": ltype}) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(f"{name} is found in the {ltype} data table")
+            else:
+                await interaction.followup.send("Failed to search entity.")
+
+# slash command for creating a character
+@client.tree.command(name="create_character", description="Create a new character.")
+@app_commands.describe(name="Character's name", other_info="Other character information")
+async def create_character(interaction: discord.Interaction, name: str, other_info: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.post(character_url, json={"name": name, "other_info": other_info}) as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` created!")
+            else:
+                await interaction.followup.send("Failed to create character.")
+
+# slash command for viewing character
+@client.tree.command(name="view_character", description="View a character by name.")
+@app_commands.describe(name="Character's name")
+async def view_character(interaction: discord.Interaction, name: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{character_url}/{name}") as resp:
+            if resp.status == 200:
+                character = await resp.json()
+                await interaction.followup.send(f"Character details: `{character}`")
+            else:
+                await interaction.followup.send("Character not found.")
+
+# slash command for updating a character
+@client.tree.command(name="update_character", description="Update an existing character.")
+@app_commands.describe(name="Character's name", other_info="New character info")
+async def update_character(interaction: discord.Interaction, name: str, other_info: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.put(f"{character_url}/{name}", json={"other_info": other_info}) as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` updated!")
+            else:
+                await interaction.followup.send("Failed to update character.")
+
+# slash command for deleting a character
+@client.tree.command(name="delete_character", description="Delete a character by name.")
+@app_commands.describe(name="Character's name")
+async def delete_character(interaction: discord.Interaction, name: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(f"{character_url}/{name}") as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` deleted!")
+            else:
+                await interaction.followup.send("Failed to delete character.")
+
+# slash command for attack
+@client.tree.command(name="attack", description="Attack another character.")
+@app_commands.describe(target_name="Target character's name", damage_dice="Damage dice (e.g. 1d6)")
+async def attack(interaction: discord.Interaction, target_name: str, damage_dice: str):
+    await interaction.response.defer()
+    attacker_name = interaction.user.name
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(attack_url, json={
+            "attacker_name": attacker_name,
+            "target_name": target_name,
+            "damage_dice": damage_dice
+        }) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(result["message"])
+
+                if "Dead" in result["message"]:
+                    target_user = discord.utils.get(interaction.guild.members, name=target_name)
+                    if target_user:
+                        try:
+                            await target_user.send(f"Your character `{target_name}` has been killed in combat!")
+                        except discord.Forbidden:
+                            await interaction.followup.send(f"Could not DM {target_name}.")
+            else:
+                await interaction.followup.send("Attack failed.")
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
