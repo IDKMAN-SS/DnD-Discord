@@ -13,6 +13,7 @@ intents.message_content = True
 roll_url = "http://localhost:8000/roll"
 schedule_url = "http://localhost:8000/reminder"
 customweapon_url = "http://localhost:8000/customweapon"
+lookup_url = "http://localhost:8000/search"
 
 GUILD_ID = 1359588987391578342
 
@@ -40,7 +41,7 @@ async def roll(interaction: discord.Interaction, dice: str):
     await interaction.response.defer()  # Acknowledge the interaction
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(roll_url, params={"q": dice}) as resp:
+        async with session.get(roll_url, params={"dice": dice}) as resp:
             if resp.status == 200:
                 result = await resp.json()
                 await interaction.followup.send(f"You rolled `{dice}` and got: {result}")
@@ -82,5 +83,18 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, messa
             else:
                 await interaction.followup.send("Failed to schedule")
 
+# slash command for lookup
+@client.tree.command(name="lookup", description="search a specific type of entity")
+@app_commands.describe(name="the name of the entity", ltype="enter monster or weapons")
+async def lookup(interaction: discord.Interaction, name: str, ltype: str):
+    await interaction.response.defer()
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(lookup_url, params={"name": name, "ltype": ltype}) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(f"{name} is found in the {ltype} data table")
+            else:
+                await interaction.followup.send("Failed to search entity.")
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
