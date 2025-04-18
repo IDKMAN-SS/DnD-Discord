@@ -21,10 +21,26 @@ class Client(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
 
+    '''
     async def setup_hook(self):
         guild = discord.Object(id=GUILD_ID)
-        #self.tree.clear_commands(guild=guild)
-        await self.tree.sync(guild=guild)
+        #await self.tree.sync(guild=guild)
+        await self.tree.sync()
+    '''
+    async def startup(self) -> None:
+        """Sync application commands"""
+        await self.wait_until_ready()
+		
+		# Sync application commands
+        synced = await self.tree.sync()
+		
+    async def setup_hook(self) -> None:
+        """Initialize the bot, database, prefixes & cogs."""
+        # Initialize the DiscordBot setup hook
+        await super().setup_hook()
+
+		# Sync application commands
+        self.loop.create_task(self.startup())
 
 
     async def on_ready(self):
