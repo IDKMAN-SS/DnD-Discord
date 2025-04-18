@@ -27,6 +27,9 @@ class Client(commands.Bot):
         #await self.tree.sync(guild=guild)
         await self.tree.sync()
     '''
+
+    # Link for the fix to syncing the bot commands:
+    # https://github.com/PaulMarisOUMary/Discord-Bot/blob/main/bot.py
     async def startup(self) -> None:
         """Sync application commands"""
         await self.wait_until_ready()
