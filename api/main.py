@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends
-from api.apihandlers import roll, lookup
+from sqlalchemy.orm import Session
 from api.apihandlers.attack import router as attack_router
-import logging
 from database.database import get_db
-from database.models import Character
-from sqlalchemy.orm.session import Session
+from api_models import CharacterBase  
+import character_management
+import logging
 
 logger = logging.getLogger('uvicorn.error')
 logger.setLevel(logging.DEBUG)
@@ -16,28 +16,9 @@ async def root():
     logger.debug("running base url")
     return {"message": "Hello World"}
 
-@app.get("/roll")
-def _(q: str = ""):
-    logger.debug("rolling endpoint hit")
-    if q == "":
-        return{"could not process request"}
-    try:
-        return roll.roll_dice(q)
-    except ValueError as e:
-        return str(e)
-
-@app.get("/search")
-def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
-    if name == "" or ltype == "":
-        return {"name or type are missing"}
-    try:
-        return lookup.lookup(name, ltype, db)
-    except ValueError as e:
-        return str(e)
-
 #create character endpoint
 @app.post("/api/character")
-def create_character(character: Character, db: Session = Depends(get_db)):
+def create_character(character: CharacterBase, db: Session = Depends(get_db)):
     return character_management.create_character(character, db)
 
 #get character endpoint
@@ -47,9 +28,10 @@ def get_character(name: str, db: Session = Depends(get_db)):
 
 #update character endpoint
 @app.put("/api/character/{name}")
-def update_character(name: str, character: Character, db: Session = Depends(get_db)):
+def update_character(name: str, character: CharacterBase, db: Session = Depends(get_db)):
     return character_management.update_character(name, character, db)
 
+#delete character endpoint
 @app.delete("/api/character/{name}")
 def delete_character(name: str, db: Session = Depends(get_db)):
     return character_management.delete_character(name, db)
