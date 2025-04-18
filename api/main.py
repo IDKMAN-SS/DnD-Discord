@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from api.apihandlers.attack import router as attack_router
 import logging
 from database.database import get_db
-from api_models import CharacterBase  
+from api.api_models import CharacterBase  
 import api.apihandlers.character_management as character_management
 import logging
 

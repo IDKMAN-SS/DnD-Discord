@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.database import get_db
 from database.models import Character
-from api_models import CharacterCreate, CharacterUpdate, CharacterOut
+from api.api_models import CharacterCreate, CharacterUpdate, CharacterOut
 import logging
 
 logger = logging.getLogger("uvicorn.error")

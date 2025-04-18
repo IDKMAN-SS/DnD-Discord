@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database.models import Character
 from database.database import get_db
-from roll import roll_dice
-from api_models import AttackRequest 
+from api.apihandlers.roll import roll_dice
+from api.api_models import AttackRequest 
 import random
 
 router = APIRouter()
