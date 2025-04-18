@@ -5,7 +5,7 @@ from api.apihandlers.attack import router as attack_router
 import logging
 from database.database import get_db
 from api_models import CharacterBase  
-import character_management
+import api.apihandlers.character_management as character_management
 import logging
 
 logger = logging.getLogger('uvicorn.error')
