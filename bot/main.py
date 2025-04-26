@@ -19,6 +19,8 @@ customweapon_url = "http://localhost:8000/customweapon"
 lookup_url = "http://localhost:8000/search"
 reminders_due = "http://localhost:8000/reminders_due"
 mark_sent = "http://localhost:8000/mark_sent"
+character_url = "http://localhost:8000/api/character"
+attack_url = "http://localhost:8000/api/attack"
 
 class Client(commands.Bot):
     def __init__(self):
