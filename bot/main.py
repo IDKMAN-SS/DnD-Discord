@@ -1,7 +1,9 @@
+import asyncio
+from logging import exception
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, channel
 import aiohttp # handles async HTTP requests
 from dotenv import load_dotenv
 
@@ -14,46 +16,45 @@ roll_url = "http://localhost:8000/roll"
 schedule_url = "http://localhost:8000/reminder"
 customweapon_url = "http://localhost:8000/customweapon"
 lookup_url = "http://localhost:8000/search"
+reminders_due = "http://localhost:8000/reminders_due"
 
-GUILD_ID = 1359588987391578342
 
 class Client(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
 
-    '''
-    async def setup_hook(self):
-        guild = discord.Object(id=GUILD_ID)
-        #await self.tree.sync(guild=guild)
-        await self.tree.sync()
-    '''
-
-    # Link for the fix to syncing the bot commands:
-    # https://github.com/PaulMarisOUMary/Discord-Bot/blob/main/bot.py
-    async def startup(self) -> None:
-        """Sync application commands"""
-        await self.wait_until_ready()
-		
-		# Sync application commands
-        synced = await self.tree.sync()
-		
     async def setup_hook(self) -> None:
-        """Initialize the bot, database, prefixes & cogs."""
-        # Initialize the DiscordBot setup hook
         await super().setup_hook()
+        await self.tree.sync()
+        self.loop.create_task(self.check_reminders())
+       #setups the reminders loop
+    async def check_reminders(self):
+        await self.wait_until_ready()
+        while not self.is_closed():
+            try:
+                await self.fetch_and_send_reminders()
+            except Exception as e:
+                print(f"Reminder loop error: {e}")
+            await asyncio.sleep(60)
 
-
-		# Sync application commands
-        self.loop.create_task(self.startup())
-
-        #setups the reminders loop
-
+    async def fetch_and_send_reminders(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(reminders_due) as resp:
+                if resp.status == 200:
+                    reminders = await resp.json()
+                    for reminder in reminders:
+                        channel = self.get_channel(int(reminder["channel_id"]))
+                        if channel:
+                            if isinstance(channel, discord.TextChannel):
+                                print(f"Sending reminder to {channel.id}")
+                                await channel.send(reminder["message"])
+                                await asyncio.sleep(1)
+                            else:
+                                print(f"Error cannot send message to channel")
 
     async def on_ready(self):
         print(f'We have logged in as {self.user}')
 
-intents = discord.Intents.default()
-intents.message_content = True
 
 client = Client()
 

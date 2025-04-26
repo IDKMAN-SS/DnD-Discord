@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from api.apihandlers import roll, lookup, scheduler, custom_weapons
+from api.apihandlers import roll, lookup, scheduler, custom_weapons, reminders_due
 import logging
 from database.database import get_db
 from sqlalchemy.orm.session import Session
@@ -23,6 +23,10 @@ def _(dice: str = ""):
         return roll.roll_dice(dice)
     except ValueError as e:
         return str(e)
+
+@app.get("/reminders_due")
+def _(db: Session = Depends(get_db)):
+    return reminders_due.get_due_reminder(db)
 
 @app.get("/search")
 def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
