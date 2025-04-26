@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
-from api.apihandlers import roll, lookup
 from sqlalchemy.orm import Session
 from api.apihandlers.attack import router as attack_router
+from api.apihandlers import roll, lookup, scheduler, custom_weapons, reminders_due
 import logging
 from database.database import get_db
 from api.api_models import CharacterBase  
@@ -19,14 +19,18 @@ async def root():
     return {"message": "Hello World"}
 
 @app.get("/roll")
-def _(q: str = ""):
+def _(dice: str = ""):
     logger.debug("rolling endpoint hit")
-    if q == "":
+    if dice == "":
         return{"could not process request"}
     try:
-        return roll.roll_dice(q)
+        return roll.roll_dice(dice)
     except ValueError as e:
         return str(e)
+
+@app.get("/reminders_due")
+def _(db: Session = Depends(get_db)):
+    return reminders_due.get_due_reminder(db)
 
 @app.get("/search")
 def _(name: str = "", ltype: str = "", db: Session = Depends(get_db)):
@@ -71,3 +75,11 @@ def _(date: str, time: str, message: str, channel_id: str, db: Session = Depends
         return scheduler.schedule_reminder(date, time, message, channel_id, db)
     except ValueError as e:
         return str(e)
+
+@app.post("/mark_sent")
+def _(reminder_data: dict, db: Session = Depends(get_db)):
+    return(reminders_due.mark_sent(reminder_data, db))
+
+@app.post("/customweapon")
+def _(name: str, damage: str, range: str, db: Session = Depends(get_db)):
+    return custom_weapons.add_custom_weapon(name, damage, range, db)
