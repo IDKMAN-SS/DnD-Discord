@@ -55,5 +55,5 @@ def _(reminder_data: dict, db: Session = Depends(get_db)):
     return(reminders_due.mark_sent(reminder_data, db))
 
 @app.post("/customweapon")
-def _(name: str, damage: int, range: int, db: Session = Depends(get_db)):
+def _(name: str, damage: str, range: str, db: Session = Depends(get_db)):
     return custom_weapons.add_custom_weapon(name, damage, range, db)

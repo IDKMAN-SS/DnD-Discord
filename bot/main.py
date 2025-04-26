@@ -78,7 +78,7 @@ async def roll(interaction: discord.Interaction, dice: str):
 # slash command for creating a custom weapon
 @client.tree.command(name="customweapon", description="Create a custom weapon.")
 @app_commands.describe(name="Weapon name", damage="weapon damage", range="weapon range")
-async def customweapon(interaction: discord.Interaction, name: str, damage: int, range: int):
+async def customweapon(interaction: discord.Interaction, name: str, damage: str, range: str):
     await interaction.response.defer()
 
     try:
@@ -86,7 +86,7 @@ async def customweapon(interaction: discord.Interaction, name: str, damage: int,
             async with session.post(customweapon_url, params={"name": name, "damage": damage, "range": range}) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    await interaction.followup.send((f"success {data.name} created successfully."))
+                    await interaction.followup.send((data[0]))
                 else:
                     error_message = await resp.text()
                     await interaction.followup.send(f"Failed to create weapon. Server said: {error_message}")

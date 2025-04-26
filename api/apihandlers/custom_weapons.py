@@ -2,16 +2,13 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from database.models import CustomWeapon
 
-def add_custom_weapon(name:str, damage: int, range: int, db: Session):
-    if not name.strip() or not damage.strip():
-        raise HTTPException(status_code=400, detail="Name and damage are required/")
-    
-    # Optionally: check if weapon already exists
+def add_custom_weapon(name:str, damage: str, range: str, db: Session):
     existing = db.query(CustomWeapon).filter(CustomWeapon.name == name).first()
     if existing:
         raise HTTPException(status_code=409, detail=f"Weapon '{name}' already exists.")
-    
-    new_weapon = CustomWeapon(name=name, damage=damage, range=range)
+    damageint = int(damage)
+    rangeint = int(range)
+    new_weapon = CustomWeapon(name=name, damage=damageint, range=rangeint)
     db.add(new_weapon)
     db.commit()
     db.refresh(new_weapon)
