@@ -13,14 +13,14 @@ def lookup(name, ltype: str, db: Session):
         if monster != None:
             result = {"Monster Name" : monster.name, "Monster Type" : monster.type, "Monster actions" : monster.actions, "Monster armor" : monster.armor_class, "Monster immunites" : monster.damage_immunities, "Monster Vulnerabilities" : monster.damage_vulnerabilities}
         else:
-            raise ValueError("monster is not contained in our database at this time sorry for the inconvience")
+            raise ValueError(f"{name} is not contained in our database at this time sorry for the inconvience")
     elif(ltype.lower() == "weapons"):
         logger.debug("weapon path")
         weapons: Weapons= db.query(Weapons).filter(Weapons.name == name).first()
         if weapons != None:
             result = {"Weapon Name" : weapons.name, "Weapon Damage" : weapons.damage_damage_dice, "Weapon Prop" : weapons.properties,"Weapon cat" : weapons.weapon_category}
         else:
-            raise ValueError("weapon is not contained in our database at this time sorry for the inconvience")
+            raise ValueError(f"{name} is not contained in our database at this time sorry for the inconvience")
     else:
         logger.debug("Invalid type")
         raise ValueError("type is invalid try monster or weapon")

@@ -6,7 +6,7 @@ class Character(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    player_id = Column(String, unique=True, index=True)
+    player_id = Column(String, index=True)
     hp = Column(Integer)
     ac = Column(Integer)
     level = Column(Integer)
