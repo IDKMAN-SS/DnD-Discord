@@ -1,9 +1,10 @@
 import asyncio
+import json
 from logging import exception
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands, channel
+from discord import AllowedMentions, app_commands, channel
 import aiohttp # handles async HTTP requests
 from dotenv import load_dotenv
 
@@ -17,6 +18,7 @@ schedule_url = "http://localhost:8000/reminder"
 customweapon_url = "http://localhost:8000/customweapon"
 lookup_url = "http://localhost:8000/search"
 reminders_due = "http://localhost:8000/reminders_due"
+mark_sent = "http://localhost:8000/mark_sent"
 
 
 class Client(commands.Bot):
@@ -47,7 +49,9 @@ class Client(commands.Bot):
                         if channel:
                             if isinstance(channel, discord.TextChannel):
                                 print(f"Sending reminder to {channel.id}")
-                                await channel.send(reminder["message"])
+                                await channel.send(f"@everyone {reminder["message"]}",allowed_mentions=AllowedMentions(everyone=True))
+                                async with aiohttp.ClientSession() as session:
+                                    await session.post(mark_sent, json={"id": reminder["id"]})
                                 await asyncio.sleep(1)
                             else:
                                 print(f"Error cannot send message to channel")

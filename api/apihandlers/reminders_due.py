@@ -21,3 +21,13 @@ def get_due_reminder(db: Session):
         "window":window
     }).mappings().all()
     return results
+
+def mark_sent(reminder_data: dict, db: Session):
+    reminder_id = reminder_data.get("id")
+    if not reminder_id:
+        raise ValueError("Invalid Id")
+    db.execute(text("""
+        UPDATE reminders SET sent = 1 WHERE id = :id
+    """), {"id": reminder_id})
+    db.commit()
+    return {"message": f"Reminder {reminder_id} marked as sent"}

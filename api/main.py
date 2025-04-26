@@ -50,6 +50,10 @@ def _(date: str, time: str, message: str, channel_id: str, db: Session = Depends
     except ValueError as e:
         return str(e)
 
+@app.post("/mark_sent")
+def _(reminder_data: dict, db: Session = Depends(get_db)):
+    return(reminders_due.mark_sent(reminder_data, db))
+
 @app.post("/customweapon")
 def _(name: str, damage: int, range: int, db: Session = Depends(get_db)):
     return custom_weapons.add_custom_weapon(name, damage, range, db)
