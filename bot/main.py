@@ -166,7 +166,7 @@ async def update_character(interaction: discord.Interaction, name: str, hp: int,
     await interaction.response.defer()
     async with aiohttp.ClientSession() as session:
         async with session.put(f"{character_url}/{name}", json={
-            "hp": hp, "ac": ac, "level": level, "race": race, "char_class": char_class
+            "name":name, "player_id": str(interaction.user.id), "hp": hp, "ac": ac, "level": level, "race": race, "char_class": char_class
         }) as resp:
             if resp.status == 200:
                 await interaction.followup.send(f"Character `{name}` updated!")
