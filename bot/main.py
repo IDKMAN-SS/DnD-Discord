@@ -172,7 +172,7 @@ async def update_character(interaction: discord.Interaction, name: str, hp: int,
                 await interaction.followup.send(f"Character `{name}` updated!")
             else:
                 error_message = await resp.text()
-                await interaction.followup.send(f"Failed to create weapon. Server said: {error_message}")
+                await interaction.followup.send(f"Failed to update character. Server said: {error_message}")
 
 @client.tree.command(name="delete_character", description="Delete a character")
 @app_commands.describe(name="Character's name")
@@ -208,7 +208,7 @@ async def attack(interaction: discord.Interaction, target_name: str, damage_dice
                             await interaction.followup.send(f"Could not DM {target_name}.")
             else:
                 error_message = await resp.text()
-                await interaction.followup.send(f"Failed to create weapon. Server said: {error_message}")
+                await interaction.followup.send(f"Failed to attack. Server said: {error_message}")
 
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
