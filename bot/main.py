@@ -126,4 +126,85 @@ async def lookup(interaction: discord.Interaction, name: str, ltype: str):
             else:
                 await interaction.followup.send("Failed to search entity.")
 
+@client.tree.command(name="create_character", description="Create a new character")
+@app_commands.describe(name="Character name", hp="HP", ac="AC", level="Level", race="Race", char_class="Class")
+async def create_character(interaction: discord.Interaction, name: str, hp: int, ac: int, level: int, race: str, char_class: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.post(character_url, json={
+            "name": name,
+            "hp": hp,
+            "ac": ac,
+            "level": level,
+            "race": race,
+            "char_class": char_class,
+            "player_id": str(interaction.user.id)
+        }) as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` created!")
+            else:
+                error_message = await resp.text()
+                await interaction.followup.send(f"Failed to create character. {error_message}")
+
+@client.tree.command(name="view_character", description="View a character by name")
+@app_commands.describe(name="Character's name")
+async def view_character(interaction: discord.Interaction, name: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{character_url}/{name}") as resp:
+            if resp.status == 200:
+                character = await resp.json()
+                await interaction.followup.send(f"Character details: `{character}`")
+            else:
+                await interaction.followup.send("Character not found.")
+
+@client.tree.command(name="update_character", description="Update a character")
+@app_commands.describe(name="Character's name", hp="HP", ac="AC", level="Level", race="Race", char_class="Class")
+async def update_character(interaction: discord.Interaction, name: str, hp: int, ac: int, level: int, race: str, char_class: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.put(f"{character_url}/{name}", json={
+            "hp": hp, "ac": ac, "level": level, "race": race, "char_class": char_class
+        }) as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` updated!")
+            else:
+                await interaction.followup.send("Failed to update character.")
+
+@client.tree.command(name="delete_character", description="Delete a character")
+@app_commands.describe(name="Character's name")
+async def delete_character(interaction: discord.Interaction, name: str):
+    await interaction.response.defer()
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(f"{character_url}/{name}") as resp:
+            if resp.status == 200:
+                await interaction.followup.send(f"Character `{name}` deleted!")
+            else:
+                await interaction.followup.send("Failed to delete character.")
+
+@client.tree.command(name="attack", description="Attack another character")
+@app_commands.describe(target_name="Target name", damage_dice="Damage dice (e.g. 1d6)")
+async def attack(interaction: discord.Interaction, target_name: str, damage_dice: str):
+    await interaction.response.defer()
+    attacker_name = interaction.user.name
+    async with aiohttp.ClientSession() as session:
+        async with session.post(attack_url, json={
+            "attacker_name": attacker_name,
+            "target_name": target_name,
+            "damage_dice": damage_dice
+        }) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                await interaction.followup.send(result["message"])
+                if "Dead" in result["message"]:
+                    target_user = discord.utils.get(interaction.guild.members, name=target_name)
+                    if target_user:
+                        try:
+                            await target_user.send(f"Your character `{target_name}` has been killed in combat!")
+                        except discord.Forbidden:
+                            await interaction.followup.send(f"Could not DM {target_name}.")
+            else:
+                await interaction.followup.send("Attack failed.")
+
+
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
