@@ -124,7 +124,7 @@ async def lookup(interaction: discord.Interaction, name: str, ltype: str):
         async with session.get(lookup_url, params={"name": name, "ltype": ltype}) as resp:
             if resp.status == 200:
                 result = await resp.json()
-                await interaction.followup.send(f"{name} is found in the {ltype} data table")
+                await interaction.followup.send(result)
             else:
                 await interaction.followup.send("Failed to search entity.")
 
@@ -199,11 +199,11 @@ async def attack(interaction: discord.Interaction, target_name: str, damage_dice
             if resp.status == 200:
                 result = await resp.json()
                 await interaction.followup.send(result["message"])
-                if "Dead" in result["message"]:
-                    target_user = discord.utils.get(interaction.guild.members, name=target_name)
+                if result["hp"] <= 0:
+                    target_user = result["user"]
                     if target_user:
                         try:
-                            await target_user.send(f"Your character `{target_name}` has been killed in combat!")
+                            await interaction.followup.send(f"<@{target_user}> Your character `{target_name}` has been killed in combat!",allowed_mentions=AllowedMentions())
                         except discord.Forbidden:
                             await interaction.followup.send(f"Could not DM {target_name}.")
             else:

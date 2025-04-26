@@ -9,20 +9,21 @@ import random
 router = APIRouter()
 
 # roll for attack value
-def roll_attack(character_level, ac):
-    attack_roll = random.randint(1, 20) + character_level
+def roll_attack(ac):
+    attack_roll = random.randint(1, 20)
     return attack_roll >= ac
 
 @router.post("/attack")
 async def attack(request: AttackRequest, db: Session = Depends(get_db)):
-    attacker = db.query(Character).filter(Character.name == request.attacker_name).first()
     target = db.query(Character).filter(Character.name == request.target_name).first()
     
-    if not attacker or not target:
-        raise HTTPException(status_code=404, detail="Attacker or target not found")
+    # if not attacker:
+    #     raise HTTPException(status_code=404, detail="Attacker not found")
+    if not target:
+        raise HTTPException(status_code=404, detail="target not found")
     
     # attack
-    hit = roll_attack(attacker.level, target.ac)
+    hit = roll_attack(target.ac)
     
     if not hit:
         return {"message": f"{request.attacker_name} missed {request.target_name}!"}
@@ -43,6 +44,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
     db.refresh(target)
     
     return {
-        "message": f"{request.attacker_name} hit {request.target_name} for {damage} damage. "
-                   f"{request.target_name} now has {target.hp} HP."
+        "message": f"{request.attacker_name} hit {request.target_name} for {damage} damage! {request.target_name} now has {target.hp} HP.",
+        "hp": target.hp,
+        "user": target.player_id
     }
