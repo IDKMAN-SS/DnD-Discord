@@ -17,7 +17,7 @@ A Discord bot for running Dungeons & Dragons games. It provides dice rolling, re
    ```
 
 3. **Set up environment variables**:
-   - Create an empty `.env` file in the project root.
+   - Create an empty `.env` file in the project root (this should already exist).
    - Add the bot token provided to you:
      ```ini
      DISCORD_BOT_TOKEN=TheAPIKEYPROVIDED
