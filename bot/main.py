@@ -116,7 +116,7 @@ async def reminder(interaction: discord.Interaction, date: str, time: str, messa
 
 # slash command for lookup
 @client.tree.command(name="lookup", description="search a specific type of entity")
-@app_commands.describe(name="the name of the entity", ltype="enter monster or weapons")
+@app_commands.describe(name="the name of the entity", ltype="enter monster, weapon, or custom weapon")
 async def lookup(interaction: discord.Interaction, name: str, ltype: str):
     await interaction.response.defer()
 
